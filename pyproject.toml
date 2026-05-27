@@ -1,0 +1,14 @@
+[tool.black]
+line-length=80
+
+[tool.pylint.MASTER]
+jobs=1
+
+[tool.pylint.REPORTS]
+reports='no'
+
+[tool.pylint.TYPECHECK]
+max-line-length=80
+
+[tool.pyint.IMPORTS]
+deprecated-modules='regsub,TERMIOS,Bastion,rexec,optparse'
