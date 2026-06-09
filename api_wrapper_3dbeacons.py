@@ -116,6 +116,7 @@ def _fetch_file(mdl_info, outdir):
     with open(outdir / fname, "wb") as mfh:
         for chunk in response.iter_content(chunk_size=8192):
             mfh.write(chunk)
+    return fname.stem
 
 
 def _collect_results(response, endpoint, output_dir):
@@ -129,22 +130,21 @@ def _collect_results(response, endpoint, output_dir):
         encoding="utf8",
     ) as jfh:
         json.dump(response["uniprot_entry"], jfh)
-    # get coordinate files
+    # get coordinate files & per file a summary JSON
     for mdl in response["structures"]:
         mdl = mdl["summary"]
         # in provider dir
         out_path = output_dir / mdl["provider"]
         out_path.mkdir(parents=True, exist_ok=True)
-        # store summary as JSON
-        # ToDo: [blocker] Summary per model!
+        # coordinate file
+        fname = _fetch_file(mdl, out_path)
+        # summary file
         with open(
-            out_path / "summary.json",
+            out_path / f"{fname}_summary.json",
             "w",
             encoding="utf8",
         ) as jfh:
             json.dump(mdl, jfh)
-        # fetch model
-        _fetch_file(mdl, out_path)
 
 
 def _main():
