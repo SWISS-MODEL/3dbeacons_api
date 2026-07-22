@@ -17,7 +17,7 @@ def _parse_args():
         "outdir": "<OUTPUT DIRECTORY>",
         "qualifier": "<QUALIFIER>",
     }
-    endpoints = ("UniProt", "Ensemble")
+    endpoints = ("UniProt", "Ensembl")
     parser.add_argument(
         "endpoint",
         choices=[x.lower() for x in endpoints],
@@ -93,9 +93,13 @@ def _make_coordfile_name(mdl_info):
     """Assemble a name for a coordinate file."""
     # some providers deliver non-unique file name, use model identifier instead
     if mdl_info["provider"].upper() in ("SWISS-MODEL",):
-        fname = Path(mdl_info["model_identifier"].translate(_TRANSLATE_TABLE))
+        mdl_id = mdl_info["model_identifier"].translate(_TRANSLATE_TABLE)
     else:
-        fname = Path(Path(urlsplit(mdl_info["model_url"]).path).name)
+        mdl_id = str(Path(urlsplit(mdl_info["model_url"]).path).name)
+    fname = Path(
+        f"{mdl_info['provider']}__{mdl_info['model_format'].upper()}"
+        + f"__{mdl_id}"
+    )
     # make sure file has an extension
     if not fname.suffix:
         if mdl_info["model_format"].upper() == "MMCIF":
@@ -106,17 +110,17 @@ def _make_coordfile_name(mdl_info):
                 + "needs to be added to the wrapper script."
             )
 
-    return fname
+    return fname, mdl_id
 
 
 def _fetch_file(mdl_info, outdir):
     response = requests.get(mdl_info["model_url"], timeout=360)
     response.raise_for_status()
-    fname = _make_coordfile_name(mdl_info)
+    fname, mid = _make_coordfile_name(mdl_info)
     with open(outdir / fname, "wb") as mfh:
         for chunk in response.iter_content(chunk_size=8192):
             mfh.write(chunk)
-    return fname.stem
+    return Path(mid).stem
 
 
 def _collect_results(response, endpoint, output_dir):
@@ -133,14 +137,16 @@ def _collect_results(response, endpoint, output_dir):
     # get coordinate files & per file a summary JSON
     for mdl in response["structures"]:
         mdl = mdl["summary"]
-        # in provider dir
-        out_path = output_dir / mdl["provider"]
-        out_path.mkdir(parents=True, exist_ok=True)
+        provider = mdl["provider"]
         # coordinate file
-        fname = _fetch_file(mdl, out_path)
-        # summary file
+        out_path = output_dir / "MODELS"
+        out_path.mkdir(parents=True, exist_ok=True)
+        mid = _fetch_file(mdl, out_path)
+        # summary file in SUMMARIES/provider/
+        summaries_path = output_dir / "SUMMARIES"
+        summaries_path.mkdir(parents=True, exist_ok=True)
         with open(
-            out_path / f"{fname}_summary.json",
+            summaries_path / f"{mdl['provider']}__{mid}.json",
             "w",
             encoding="utf8",
         ) as jfh:

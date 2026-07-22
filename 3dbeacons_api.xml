@@ -1,0 +1,287 @@
+<tool name="3D-Beacons API" id="3dbeacons_api" profile="25.1" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@">
+    <description>
+        The 3D-Beacons Network provides unified programmatic access to
+        experimentally determined and predicted structure models
+    </description>
+    <macros>
+        <token name="@TOOL_VERSION@">0.1.0</token>
+        <token name="@VERSION_SUFFIX@">0</token>
+    </macros>
+    <xrefs>
+        <xref type="bio.tools">3d-beacons</xref>
+    </xrefs>
+    <requirements>
+        <requirement type="package" version="3.13">python</requirement>
+        <requirement type="package" version="2.34.2">requests</requirement>
+    </requirements>
+    <command detect_errors="aggressive"><![CDATA[
+mkdir -p 'output_dir/'
+&& python3 '$__tool_directory__/api_wrapper_3dbeacons.py'
+                          '${endpoint}'
+                          '${qualifier}'
+                          output_dir
+]]>
+    </command>
+    <inputs>
+        <param name="endpoint" type="select" value="UniProt" optional="false" label="Query DB" display="radio" help="The database to look up entries">
+            <option value="UniProt" selected="true">UniProtKB</option>
+            <option value="Ensembl">Ensembl</option>
+        </param>
+        <conditional name="input_mode">
+            <param name="mode" type="select" value="text" optional="false" label="Search Request" display="radio">
+                <option value="text" selected="true" >Text Input</option>
+                <option value="file">File Input</option>
+            </param>
+            <when value="text">
+                <param name="qualifier" type="text" value="" optional="false" label="Qualifier" help="ID/ AC to search for"/>
+            </when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <!-- LevyLab 404es -->
+        <!-- Isoform.io down since May 2026 -->
+        <!-- HegeLab.org -->
+        <collection name="cif_hl_collections" type="list" label="HegeLab mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="HEGELAB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- AlphaFill Q69GM4 -->
+        <collection name="cif_afi_collections" type="list" label="AlphaFill mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFill__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- SASBDB -->
+        <collection name="pdb_sasb_collections" type="list" label="SASBDB PDB model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="pdb" pattern="SASBDB__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
+        </collection>
+        <!-- Protein Ensemble Database -->
+        <collection name="cif_ped_collections" type="list" label="PED mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PED__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- PDBe -->
+        <collection name="cif_pdbe_collections" type="list" label="PDBe mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PDBe__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- PDBe-KB: not seen in results, yet (provider ID unknown) -->
+        <!-- AlphaFold DB: mmCIF -->
+        <collection name="cif_af_collections" type="list" label="AlphaFold DB mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFold DB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- ModelArchive -->
+        <collection name="cif_ma_collections" type="list" label="ModelArchive mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="ModelArchive__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- SWISS-MODEL: ModelCIF -->
+        <collection name="cif_sm_collections" type="list" label="SWISS-MODEL mmCIF model(s) for ${qualifier}">
+          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="SWISS-MODEL__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+        </collection>
+        <!-- Model summaries -->
+        <collection name="summary_collection" type="list:list" label="Summaries">
+            <discover_datasets directory="output_dir/SUMMARIES" format="json" pattern="(?P&lt;identifier_0&gt;.*)__(?P&lt;identifier_1&gt;.*)\.json$"/>
+        </collection>
+        <!-- Entry information -->
+        <collection name="info_collection" type="list" label="${endpoint} entry info for ${qualifier}">
+            <discover_datasets directory="output_dir/INFO" format="json" pattern="(?P&lt;name&gt;.+)\.json$"/>
+        </collection>
+    </outputs>
+<!--     <tests> -->
+<!--         <!-\- w/o params, all will be empty strings, fail -\-> -->
+<!--         <test expect_exit_code="2" expect_failure="true"> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="Argument of '&lt;SEQUENCE[S]&gt;' can not be an empty"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- with sequences, everything else empty, fail -\-> -->
+<!--         <test expect_exit_code="1" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <repeat name="target_list"> -->
+<!--                     <param name="sequence" value="test.fas"/> -->
+<!--                 </repeat> -->
+<!--                 <repeat name="target_list"> -->
+<!--                     <param name="sequence" value="AKGLHGFHVHEFGDNTNGCMSSGPHFNPYGKE"/> -->
+<!--                 </repeat> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="SWISS-MODEL token is not provided in credentials!"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- alignment mode tests, as few params as possible, fail -\-> -->
+<!--         <test expect_exit_code="2" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="project_type" value="alignment"/> -->
+<!--                 <param name="assembly_id" value="0"/> -->
+<!--                 <param name="template_seqres_offset" value="0"/> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="Option '-\-auth-asym-id' can not be an empty string"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- alignment mode tests, with auth_asym_id, fail -\-> -->
+<!--         <test expect_exit_code="2" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="assembly_id" value="0"/> -->
+<!--                 <param name="auth_asym_id" value="A"/> -->
+<!--                 <param name="project_type" value="alignment"/> -->
+<!--                 <param name="template_seqres_offset" value="0"/> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="Option '-\-pdb-id' can not be an empty string"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- alignment mode tests, with pdb_id, fail -\-> -->
+<!--         <test expect_exit_code="2" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="assembly_id" value="0"/> -->
+<!--                 <param name="auth_asym_id" value="A"/> -->
+<!--                 <param name="pdb_id" value="1AKE"/> -->
+<!--                 <param name="project_type" value="alignment"/> -->
+<!--                 <param name="template_seqres_offset" value="0"/> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="Option '-\-template-sequence' can not be an empty string"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- alignment mode tests, with template_sequence, fail -\-> -->
+<!--         <test expect_exit_code="2" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="assembly_id" value="0"/> -->
+<!--                 <param name="auth_asym_id" value="A"/> -->
+<!--                 <param name="pdb_id" value="1AKE"/> -->
+<!--                 <param name="project_type" value="alignment"/> -->
+<!--                 <param name="template_seqres_offset" value="0"/> -->
+<!--                 <param name="template_sequence" value="test.fas"/> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="Argument of '&lt;SEQUENCE[S]&gt;' can not be an empty"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- alignment mode tests, with sequence, fail -\-> -->
+<!--         <test expect_exit_code="1" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="assembly_id" value="0"/> -->
+<!--                 <param name="auth_asym_id" value="A"/> -->
+<!--                 <param name="pdb_id" value="1AKE"/> -->
+<!--                 <param name="project_type" value="alignment"/> -->
+<!--                 <param name="target_sequence" value="test.fas"/> -->
+<!--                 <param name="template_seqres_offset" value="0"/> -->
+<!--                 <param name="template_sequence" value="test.fas"/> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="SWISS-MODEL token is not provided in credentials!"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- usertemplate mode tests, as few params as possible, fail -\-> -->
+<!--         <test expect_exit_code="2" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="project_type" value="usertemplate"/> -->
+<!--                 <param name="template_file" value="model_01.pdb"/> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="Argument of '&lt;SEQUENCE[S]&gt;' can not be an empty"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--         <!-\- usertemplate mode tests, with sequence, fail -\-> -->
+<!--         <test expect_exit_code="1" expect_failure="true"> -->
+<!--             <conditional name="project"> -->
+<!--                 <param name="project_type" value="usertemplate"/> -->
+<!--                 <param name="template_file" value="model_01.pdb"/> -->
+<!--                 <repeat name="target_list"> -->
+<!--                     <param name="sequence" value="test.fas"/> -->
+<!--                 </repeat> -->
+<!--                 <repeat name="target_list"> -->
+<!--                     <param name="sequence" value="AKGLHGFHVHEFGDNTNGCMSSGPHFNPYGKE"/> -->
+<!--                 </repeat> -->
+<!--             </conditional> -->
+<!--             <assert_stderr> -->
+<!--                 <has_line line="SWISS-MODEL token is not provided in credentials!"/> -->
+<!--             </assert_stderr> -->
+<!--         </test> -->
+<!--     </tests> -->
+<!--     <help><![CDATA[ -->
+<!-- The SWISS-MODEL Modelling API tool gives you convenient access to homology models build by `SWISS-MODEL <https://swissmodel.expasy.org>`_ via our `API <https://swissmodel.expasy.org/docs/help#modelling_api>`_. -->
+
+<!-- By default, the tool fetches model coordinates in ModelCIF format from the SWISS-MODEL API. SWISS-MODEL enriches its ModelCIF files with lots of extra information, essential for later reproduction of the computational experiment and enabling for easy deposition at archiving sites, like `Model Archive <https://modelarchive.org>`_. Output format can be toggled in the *Output format options* section for legacy PDB format, in case you are dealing with old-school tools in your workflows. Regardless of the format, output file names follow the pattern ``model_<N>.[cif|pdb]``. -->
+
+<!-- The SWISS-MODEL API provides three major modelling modes: Automodel, alignment and template upload mode. -->
+
+<!-- Automodel mode -->
+<!-- -\-\-\-\-\-\-\-\-\-\-\-\-\- -->
+
+<!-- This mode corresponds to the "Sequence(s)" input mode and just hitting the "Build Model" button on our `web page <https://swissmodel.expasy.org/interactive>`_. -->
+
+<!-- Automodel goes from sequence(s) to structural model. A single sequence for input leads to monomers or homomers. Multiple sequences for input produces heteromers, incorporating all target sequences. Multiple sequences input is sometimes mistaken for multi-model modelling tasks but its not, to produce models for more than one target sequence, you need to run the tool for each sequence separately. -->
+
+<!-- Inside an automodel job, the following happens: -->
+
+<!-- 1. Template search in `PDB <https://www.rcsb.org>`_ and AlphaFold DB v4 sequences -->
+<!-- 2. Template selection by estimated quality and target sequence coverage -->
+
+<!--    - gain high model confidence -->
+<!--    - cover as much of the target sequence, maybe by different models per region -->
+<!--    - employ models for equal regions if structurally diverse -->
+
+<!-- 3. Build models -->
+
+<!-- Automodel options -->
+<!-- ~~~~~~~~~~~~~~~~~ -->
+
+<!-- Only one or more sequences required, that's all! Single sequence produces monomers and/ or homomers. Multiple sequences produces heteromers. -->
+
+
+<!-- Alignment mode -->
+<!-- -\-\-\-\-\-\-\-\-\-\-\-\-\- -->
+
+<!-- This mode corresponds to the "Target-Template Alignment" input mode on our `web page <https://swissmodel.expasy.org/interactive#alignment>`_. -->
+
+<!-- The alignment mode still builds a model for a target sequence and a template from the `SWISS-MODEL template library <https://swissmodel.expasy.org/templates/>`_ (**SMTL**). But instead of creating the alignment from its own template search run, SWISS-MODEL will use an alignment provided by yourself. The alignment will be mapped onto the template sequence and then a structural model will be build. -->
+
+<!-- To properly map a your alignment within the SMTL, you need to provide some extra information. SWISS-MODEL needs the identifier of the template. That's a common PDB ID, it just needs to exist in the SMTL. Then you need to identify the biological assembly of the entry you want your model to be based on... which can be easily done from the SMTL page. The assembly ID comes with the SMTL ID, its the number after the PDB ID and alternative assemblies of an entry can be found at the bottom of an entry page. The last component is the chain name you used for the alignment. Be aware, the SMTL uses its own chain names, so the original PDB chain name may not work. A mapping of chain names is provided on SMTL entry pages. -->
+
+<!-- Alignment mode options -->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~ -->
+
+<!-- - Target sequence: first part of the alignment -->
+<!-- - Template sequence: second sequence of the alignment -->
+<!-- - Template sequence offset: position the template sequence starts at with respect to the full sequence; When using only a sub-sequence of the full sequence, it may be hard to automatically map to the right region in case of repeats, so you need to provide the offset -->
+<!-- - PDB/ SMTL ID: PDB ID of the SMTL entry the alignment refers to -->
+<!-- - Assembly ID: ID of the biological assembly to be used as template -->
+<!-- - Chain name: ID of the chain to be used for modelling, needs to be the SMTL name, not the PDB name -->
+
+
+<!-- User template mode -->
+<!-- -\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- -->
+
+<!-- This mode corresponds to the "User Template" input mode on our `web page <https://swissmodel.expasy.org/interactive#structure>`_. -->
+
+<!-- The user template mode builds a model for a target sequence and template coordinates provided by you instead of using a SMTL entry for coordinates. The sequence alignment between target and template sequence is still calculated by SWISS-MODEL using HHblits and BLAST, or local alignment algorithm if both methods fail. With the alignment, a structural model is build based on the provided template coordinates. -->
+
+<!-- Inside a user template job, the following happens: -->
+
+<!-- 1. Analyse uploaded coordinates -->
+<!-- 2. Calculate alignments with HHblits & BLAST -->
+<!-- 3. Choose "better" alignment or calculate Smith-Waterman alignment -->
+<!-- 4. Build model -->
+
+<!-- User template mode options -->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+<!-- - Target sequence: sequence to be modelled (post multiple for heteros) -->
+<!-- - Template coordinate file: your template file, must be PDB formatted -->
+
+<!-- Attribution/ License -->
+<!-- ~~~~~~~~~~~~~~~~~~~~ -->
+
+<!-- Terms of use can be found at https://swissmodel.expasy.org/docs/terms_of_use -->
+
+<!-- Modelling results of SWISS-MODEL are licensed under the -->
+<!-- `CC BY-SA 4.0 Creative Commons Attribution-ShareAlike 4.0 International License <https://creativecommons.org/licenses/by-sa/4.0/legalcode>`_. -->
+
+<!-- ]]> -->
+<!--     </help> -->
+    <citations>
+        <!-- 3D-Beacons -->
+        <citation type="doi">10.1093/gigascience/giac118</citation>
+    </citations>
+    <creator>
+        <person email="stefan.bienert@unibas.ch" familyName="Bienert" givenName="Stefan"/>
+        <organization name="Swiss Institute of Bioinformatics" alternateName="SIB" url="https://www.sib.swiss"/>
+        <organization name="Biozentrum, University of Basel" alternateName="Biozentrum" url="https://www.biozentrum.unibas.ch"/>
+    </creator>
+</tool>
