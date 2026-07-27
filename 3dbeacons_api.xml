@@ -44,6 +44,9 @@ mkdir -p 'output_dir/'
                           #if $sequence_range
                             --sequence-range '$sequence_range'
                           #end if
+                          #if $uniprot_checksum
+                            --uniprot-checksum '$uniprot_checksum'
+                          #end if
 ]]>
     </command>
     <inputs>
@@ -69,6 +72,9 @@ mkdir -p 'output_dir/'
                 </param>
                 <param name="sequence_range" type="text" value="" optional="true" label="Sequence range" help="Specify a UniProt sequence residue range (format: 'start-end', e.g., '1-100').">
                     <validator type="regex" message="Sequence range must be in format 'start-end' (e.g., '1-100').">^\d+-\d+$</validator>
+                </param>
+                <param name="uniprot_checksum" type="text" value="" optional="true" label="UniProt checksum" help="CRC64 checksum of the UniProt sequence (16-character hex value, e.g., '1A2B3C4D5E6F7890').">
+                    <validator type="regex" message="UniProt checksum must be a 16-character hexadecimal value (e.g., '1A2B3C4D5E6F7890').">^[A-F0-9]{16}$</validator>
                 </param>
             </when>
         </conditional>

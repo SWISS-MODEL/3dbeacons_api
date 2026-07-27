@@ -12,6 +12,7 @@ import requests
 
 def _parse_args():
     """Get command line arguments."""
+    # pylint: disable=too-many-branches
     parser = argparse.ArgumentParser(description=__doc__)
 
     metas = {
@@ -79,8 +80,14 @@ def _parse_args():
     parser.add_argument(
         "--sequence-range",
         help="Specify a UniProt sequence residue range (format: 'start-end', "
-        + "e.g., '1-100').",
+        + "e.g., '1-100')",
         metavar="<RANGE>",
+    )
+    parser.add_argument(
+        "--uniprot-checksum",
+        help="CRC64 checksum of the UniProt sequence (16-character hex value)",
+        metavar="<CHECKSUM>",
+        type=str.upper,
     )
 
     opts = parser.parse_args()
@@ -124,12 +131,25 @@ def _parse_args():
                 "--sequence-range must be in format 'start-end' (e.g., "
                 + f"'1-100'), got '{opts.sequence_range}'"
             )
+    # validate CRC64 checksum format (16 hex characters)
+    if opts.uniprot_checksum is not None:
+        if not re.match(r"^[A-F0-9]{16}$", opts.uniprot_checksum):
+            parser.error(
+                "--uniprot-checksum must be a 16-character CRC64 hex value "
+                + f"(e.g., '1A2B3C4D5E6F7890'), got '{opts.uniprot_checksum}'"
+            )
 
     return opts
 
 
 def _assemble_call(
-    qualifier, endpoint, provider, exclude_provider, template, sequence_range
+    qualifier,
+    endpoint,
+    provider,
+    exclude_provider,
+    template,
+    sequence_range,
+    uniprot_checksum,
 ):
     """Get the URL for the request assembled."""
     # pylint: disable=too-many-positional-arguments,too-many-arguments
@@ -148,6 +168,8 @@ def _assemble_call(
         params["template"] = template
     if sequence_range is not None:
         params["range"] = sequence_range
+    if uniprot_checksum is not None:
+        params["uniprot_checksum"] = uniprot_checksum
 
     return url, params
 
@@ -241,6 +263,7 @@ def _main():
         opts.exclude_provider,
         opts.template,
         opts.sequence_range,
+        opts.uniprot_checksum,
     )
     response = _send_request(call, params)
     _collect_results(response, opts.endpoint, opts.outdir)
