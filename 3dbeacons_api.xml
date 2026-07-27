@@ -6,6 +6,18 @@
     <macros>
         <token name="@TOOL_VERSION@">0.1.0</token>
         <token name="@VERSION_SUFFIX@">0</token>
+        <xml name="provider_options">
+          <option value="swissmodel">SWISS-MODEL</option>
+          <option value="modelarchive">ModelArchive</option>
+          <option value="alphafill">AlphaFill</option>
+          <option value="alphafold">AlphaFold DB</option>
+          <option value="hegelab">HegeLab</option>
+          <option value="isoformio">Isoform.io</option>
+          <option value="levylab">LevyLab</option>
+          <option value="pdbe">PDBe</option>
+          <option value="ped">Protein Ensemble Database</option>
+          <option value="sasbdb">SASBDB</option>
+        </xml>
     </macros>
     <xrefs>
         <xref type="bio.tools">3d-beacons</xref>
@@ -23,6 +35,9 @@ mkdir -p 'output_dir/'
                           #if $provider
                             --provider '${provider}'
                           #end if
+                          #if $exclude_provider
+                            --exclude-provider '${exclude_provider}'
+                          #end if
 ]]>
     </command>
     <inputs>
@@ -38,16 +53,10 @@ mkdir -p 'output_dir/'
             <when value="text">
                 <param name="qualifier" type="text" value="" optional="false" label="Qualifier" help="ID/ AC to search for"/>
                 <param name="provider" type="select" optional="true" label="Provider" display="dropdown" help="Request from provider only. If none is selected, query all providers.">
-                    <option value="swissmodel">SWISS-MODEL</option>
-                    <option value="modelarchive">ModelArchive</option>
-                    <option value="alphafill">AlphaFill</option>
-                    <option value="alphafold">AlphaFold DB</option>
-                    <option value="hegelab">HegeLab</option>
-                    <option value="isoformio">Isoform.io</option>
-                    <option value="levylab">LevyLab</option>
-                    <option value="pdbe">PDBe</option>
-                    <option value="ped">Protein Ensemble Database</option>
-                    <option value="sasbdb">SASBDB</option>
+                    <expand macro="provider_options"/>
+                </param>
+                <param name="exclude_provider" type="select" optional="true" label="Exclude provider" display="dropdown" help="Exclude provider from querying.">
+                    <expand macro="provider_options"/>
                 </param>
             </when>
         </conditional>
@@ -58,46 +67,46 @@ mkdir -p 'output_dir/'
         <!-- HegeLab.org -->
         <collection name="cif_hl_collections" type="list" label="HegeLab mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="HEGELAB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'hegelab'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'hegelab') and input_mode['exclude_provider'] != 'hegelab'</filter>
         </collection>
         <!-- AlphaFill Q69GM4 -->
         <collection name="cif_afi_collections" type="list" label="AlphaFill mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFill__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'alphafill'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'alphafill') and input_mode['exclude_provider'] != 'alphafill'</filter>
         </collection>
         <!-- SASBDB -->
         <collection name="pdb_sasb_collections" type="list" label="SASBDB PDB model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="pdb" pattern="SASBDB__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'sasbdb'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'sasbdb') and input_mode['exclude_provider'] != 'sasbdb'</filter>
         </collection>
         <!-- Protein Ensemble Database -->
         <collection name="cif_ped_collections" type="list" label="PED mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PED__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'ped'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'ped') and input_mode['exclude_provider'] != 'ped'</filter>
         </collection>
         <!-- PDBe -->
         <collection name="cif_pdbe_collections" type="list" label="PDBe mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PDBe__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'pdbe'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'pdbe') and input_mode['exclude_provider'] != 'pdbe'</filter>
         </collection>
         <!-- PDBe-KB: not seen in results, yet (provider ID unknown) -->
         <!-- AlphaFold DB -->
         <collection name="cif_af_collections" type="list" label="AlphaFold DB mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFold DB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'alphafold'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'alphafold') and input_mode['exclude_provider'] != 'alphafold'</filter>
         </collection>
         <!-- ModelArchive -->
         <collection name="cif_ma_collections" type="list" label="ModelArchive mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="ModelArchive__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'modelarchive'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'modelarchive') and input_mode['exclude_provider'] != 'modelarchive'</filter>
         </collection>
         <!-- SWISS-MODEL -->
         <collection name="cif_sm_collections" type="list" label="SWISS-MODEL mmCIF model(s) for ${qualifier}">
           <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="SWISS-MODEL__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>not input_mode['provider'] or input_mode['provider'] == 'swissmodel'</filter>
+          <filter>(not input_mode['provider'] or input_mode['provider'] == 'swissmodel') and input_mode['exclude_provider'] != 'swissmodel'</filter>
         </collection>
         <!-- Model summaries -->
-        <collection name="summary_collection" type="list:list" label="Summaries">
+        <collection name="summary_collection" type="list:list" label="Summaries for ${qualifier}">
             <discover_datasets directory="output_dir/SUMMARIES" format="json" pattern="(?P&lt;identifier_0&gt;.*)__(?P&lt;identifier_1&gt;.*)\.json$"/>
         </collection>
         <!-- Entry information -->

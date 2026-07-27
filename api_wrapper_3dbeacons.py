@@ -59,6 +59,15 @@ def _parse_args():
         metavar="<PROVIDER>",
         type=str.lower,
     )
+    parser.add_argument(
+        "--exclude-provider",
+        choices=providers,
+        help="Exclude provider: '"
+        + "', '".join(providers)
+        + "'. If none is specified, query all providers.",
+        metavar="<PROVIDER>",
+        type=str.lower,
+    )
 
     opts = parser.parse_args()
 
@@ -72,36 +81,46 @@ def _parse_args():
             # Empty path points to '.'
             continue
         else:
-            raise RuntimeError(
+            parser.error(
                 f"Value with unknown type '{type(value).__name__}' found for "
                 + f"'{mta}'"
+            )
+    # check optional arguments
+    # check provider & exclude-provider to be different (404es)
+    if opts.provider is not None and opts.exclude_provider is not None:
+        if opts.provider == opts.exclude_provider:
+            parser.error(
+                "--provider and --exclude-provider must have different values"
             )
 
     return opts
 
 
-def _assemble_call(qualifier, endpoint, provider):
+def _assemble_call(qualifier, endpoint, provider, exclude_provider):
     """Get the URL for the request assembled."""
     # ToDo: add template
     # ToDo: add sequence range
-    # ToDo: add provider to exclude
     # ToDo: add CRC64 for uniprot
 
     url = (
         f"https://www.ebi.ac.uk/pdbe/pdbe-kb/3dbeacons/api/v2/{endpoint}"
         + f"/summary/{qualifier}.json"
     )
+    params = {}
     if provider is not None:
-        url += f"?provider={provider}"
+        params["provider"] = provider
+    if exclude_provider is not None:
+        params["exclude_provider"] = exclude_provider
 
-    return url
+    return url, params
 
 
-def _send_request(call):
+def _send_request(call, params):
     """Send a request to the 3D-Beacons API and wait for the response."""
     response = requests.get(
         call,
         headers={"Accept": "application/json"},
+        params=params,
         timeout=360,
     )
     response.raise_for_status()
@@ -178,8 +197,10 @@ def _collect_results(response, endpoint, output_dir):
 def _main():
     """Run as script."""
     opts = _parse_args()
-    call = _assemble_call(opts.qualifier, opts.endpoint, opts.provider)
-    response = _send_request(call)
+    call, params = _assemble_call(
+        opts.qualifier, opts.endpoint, opts.provider, opts.exclude_provider
+    )
+    response = _send_request(call, params)
     _collect_results(response, opts.endpoint, opts.outdir)
 
     sys.exit(0)
