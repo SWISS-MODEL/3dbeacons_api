@@ -22,7 +22,7 @@ def _parse_args():
         "endpoint",
         choices=[x.lower() for x in endpoints],
         help="The database to look up entries, available: '"
-        + "','".join(endpoints)
+        + "', '".join(endpoints)
         + "'",
         metavar="<ENDPOINT>",
         type=str.lower,
@@ -37,6 +37,27 @@ def _parse_args():
         help="Directory to store results in",
         metavar=metas["outdir"],
         type=Path,
+    )
+    providers = [
+        "alphafill",
+        "alphafold",
+        "hegelab",
+        "isoformio",
+        "levylab",
+        "modelarchive",
+        "pdbe",
+        "ped",
+        "sasbdb",
+        "swissmodel",
+    ]
+    parser.add_argument(
+        "--provider",
+        choices=providers,
+        help="Request from provider only: '"
+        + "', '".join(providers)
+        + "'. If none is specified, query all providers.",
+        metavar="<PROVIDER>",
+        type=str.lower,
     )
 
     opts = parser.parse_args()
@@ -59,17 +80,19 @@ def _parse_args():
     return opts
 
 
-def _assemble_call(qualifier, endpoint):
+def _assemble_call(qualifier, endpoint, provider):
     """Get the URL for the request assembled."""
-    # ToDo: Extend with provider
     # ToDo: add template
     # ToDo: add sequence range
     # ToDo: add provider to exclude
     # ToDo: add CRC64 for uniprot
+
     url = (
         f"https://www.ebi.ac.uk/pdbe/pdbe-kb/3dbeacons/api/v2/{endpoint}"
         + f"/summary/{qualifier}.json"
     )
+    if provider is not None:
+        url += f"?provider={provider}"
 
     return url
 
@@ -137,7 +160,6 @@ def _collect_results(response, endpoint, output_dir):
     # get coordinate files & per file a summary JSON
     for mdl in response["structures"]:
         mdl = mdl["summary"]
-        provider = mdl["provider"]
         # coordinate file
         out_path = output_dir / "MODELS"
         out_path.mkdir(parents=True, exist_ok=True)
@@ -156,7 +178,7 @@ def _collect_results(response, endpoint, output_dir):
 def _main():
     """Run as script."""
     opts = _parse_args()
-    call = _assemble_call(opts.qualifier, opts.endpoint)
+    call = _assemble_call(opts.qualifier, opts.endpoint, opts.provider)
     response = _send_request(call)
     _collect_results(response, opts.endpoint, opts.outdir)
 
