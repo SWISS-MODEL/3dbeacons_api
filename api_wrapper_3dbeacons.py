@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 import argparse
 import json
+import re
 import sys
 
 import requests
@@ -55,7 +56,7 @@ def _parse_args():
         choices=providers,
         help="Request from provider only: '"
         + "', '".join(providers)
-        + "'. If none is specified, query all providers.",
+        + "'. If none is specified, query all providers",
         metavar="<PROVIDER>",
         type=str.lower,
     )
@@ -64,8 +65,15 @@ def _parse_args():
         choices=providers,
         help="Exclude provider: '"
         + "', '".join(providers)
-        + "'. If none is specified, query all providers.",
+        + "'. If none is specified, query all providers",
         metavar="<PROVIDER>",
+        type=str.lower,
+    )
+    parser.add_argument(
+        "--template",
+        help="Template PDB ID (4-character code, e.g. '1ake') or SMTL ID with "
+        + "assembly and chain name (e.g. 1ake.1.A)",
+        metavar="<TEMPLATE>",
         type=str.lower,
     )
 
@@ -92,13 +100,23 @@ def _parse_args():
             parser.error(
                 "--provider and --exclude-provider must have different values"
             )
+    # validate template format (4-character PDB ID with optional chain/assembly)
+    if opts.template is not None:
+        # Matches: 1ake, 1ake.1.A, 1ake1A, 1ake_1_A, etc.
+        if not re.match(
+            r"^[a-z0-9]{4}([._-]?\d+[._-]?[A-Za-z])?$", opts.template
+        ):
+            parser.error(
+                "--template must be a 4-character PDB ID with optional "
+                + "chain/assembly (e.g., '1ake', '1ake.1.A', '1ake1A'), got "
+                + f"'{opts.template}'"
+            )
 
     return opts
 
 
-def _assemble_call(qualifier, endpoint, provider, exclude_provider):
+def _assemble_call(qualifier, endpoint, provider, exclude_provider, template):
     """Get the URL for the request assembled."""
-    # ToDo: add template
     # ToDo: add sequence range
     # ToDo: add CRC64 for uniprot
 
@@ -111,6 +129,8 @@ def _assemble_call(qualifier, endpoint, provider, exclude_provider):
         params["provider"] = provider
     if exclude_provider is not None:
         params["exclude_provider"] = exclude_provider
+    if template is not None:
+        params["template"] = template
 
     return url, params
 
@@ -198,7 +218,11 @@ def _main():
     """Run as script."""
     opts = _parse_args()
     call, params = _assemble_call(
-        opts.qualifier, opts.endpoint, opts.provider, opts.exclude_provider
+        opts.qualifier,
+        opts.endpoint,
+        opts.provider,
+        opts.exclude_provider,
+        opts.template,
     )
     response = _send_request(call, params)
     _collect_results(response, opts.endpoint, opts.outdir)

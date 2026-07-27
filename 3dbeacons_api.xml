@@ -38,6 +38,9 @@ mkdir -p 'output_dir/'
                           #if $exclude_provider
                             --exclude-provider '${exclude_provider}'
                           #end if
+                          #if $template
+                            --template '${template}'
+                          #end if
 ]]>
     </command>
     <inputs>
@@ -57,6 +60,9 @@ mkdir -p 'output_dir/'
                 </param>
                 <param name="exclude_provider" type="select" optional="true" label="Exclude provider" display="dropdown" help="Exclude provider from querying.">
                     <expand macro="provider_options"/>
+                </param>
+                <param name="template" type="text" value="" optional="true" label="Template" help="Template PDB ID (4-character code, e.g., '1ake', or with chain/assembly like '1ake.1.A').">
+                    <validator type="regex" message="Template must be a 4-character PDB ID (e.g., '1ake') optionally followed by assembly and chain (e.g., '1ake.1.A', '1ake1A').">^[a-zA-Z0-9]{4}([._-]?\d+[._-]?[A-Za-z])?$</validator>
                 </param>
             </when>
         </conditional>
