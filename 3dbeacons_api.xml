@@ -33,13 +33,16 @@ mkdir -p 'output_dir/'
                           '${qualifier}'
                           output_dir
                           #if $provider
-                            --provider '${provider}'
+                            --provider '$provider'
                           #end if
                           #if $exclude_provider
-                            --exclude-provider '${exclude_provider}'
+                            --exclude-provider '$exclude_provider'
                           #end if
                           #if $template
-                            --template '${template}'
+                            --template '$template'
+                          #end if
+                          #if $sequence_range
+                            --sequence-range '$sequence_range'
                           #end if
 ]]>
     </command>
@@ -63,6 +66,9 @@ mkdir -p 'output_dir/'
                 </param>
                 <param name="template" type="text" value="" optional="true" label="Template" help="Template PDB ID (4-character code, e.g., '1ake', or with chain/assembly like '1ake.1.A').">
                     <validator type="regex" message="Template must be a 4-character PDB ID (e.g., '1ake') optionally followed by assembly and chain (e.g., '1ake.1.A', '1ake1A').">^[a-zA-Z0-9]{4}([._-]?\d+[._-]?[A-Za-z])?$</validator>
+                </param>
+                <param name="sequence_range" type="text" value="" optional="true" label="Sequence range" help="Specify a UniProt sequence residue range (format: 'start-end', e.g., '1-100').">
+                    <validator type="regex" message="Sequence range must be in format 'start-end' (e.g., '1-100').">^\d+-\d+$</validator>
                 </param>
             </when>
         </conditional>

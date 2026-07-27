@@ -76,6 +76,12 @@ def _parse_args():
         metavar="<TEMPLATE>",
         type=str.lower,
     )
+    parser.add_argument(
+        "--sequence-range",
+        help="Specify a UniProt sequence residue range (format: 'start-end', "
+        + "e.g., '1-100').",
+        metavar="<RANGE>",
+    )
 
     opts = parser.parse_args()
 
@@ -111,13 +117,22 @@ def _parse_args():
                 + "chain/assembly (e.g., '1ake', '1ake.1.A', '1ake1A'), got "
                 + f"'{opts.template}'"
             )
+    # validate sequence range format (start-end)
+    if opts.sequence_range is not None:
+        if not re.match(r"^\d+-\d+$", opts.sequence_range):
+            parser.error(
+                "--sequence-range must be in format 'start-end' (e.g., "
+                + f"'1-100'), got '{opts.sequence_range}'"
+            )
 
     return opts
 
 
-def _assemble_call(qualifier, endpoint, provider, exclude_provider, template):
+def _assemble_call(
+    qualifier, endpoint, provider, exclude_provider, template, sequence_range
+):
     """Get the URL for the request assembled."""
-    # ToDo: add sequence range
+    # pylint: disable=too-many-positional-arguments,too-many-arguments
     # ToDo: add CRC64 for uniprot
 
     url = (
@@ -131,6 +146,8 @@ def _assemble_call(qualifier, endpoint, provider, exclude_provider, template):
         params["exclude_provider"] = exclude_provider
     if template is not None:
         params["template"] = template
+    if sequence_range is not None:
+        params["range"] = sequence_range
 
     return url, params
 
@@ -223,6 +240,7 @@ def _main():
         opts.provider,
         opts.exclude_provider,
         opts.template,
+        opts.sequence_range,
     )
     response = _send_request(call, params)
     _collect_results(response, opts.endpoint, opts.outdir)
