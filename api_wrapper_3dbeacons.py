@@ -10,6 +10,72 @@ import sys
 
 import requests
 
+# Known providers (lowercase)
+PROVIDERS = [
+    "alphafill",
+    "alphafold",
+    "hegelab",
+    "isoformio",
+    "levylab",
+    "modelarchive",
+    "pdbe",
+    "ped",
+    "sasbdb",
+    "swissmodel",
+]
+
+# Known parameter columns for batch mode
+KNOWN_PARAMS = {
+    "provider",
+    "exclude_provider",
+    "template",
+    "sequence_range",
+    "uniprot_checksum",
+}
+
+
+def _validate_provider(value):
+    """Validate provider name. Returns lowercase value."""
+    value_lower = value.lower()
+    if value_lower not in PROVIDERS:
+        raise ValueError(
+            f"invalid provider '{value}' - must be one of: "
+            + f"{', '.join(PROVIDERS)}"
+        )
+    return value_lower
+
+
+def _validate_template(value):
+    """Validate template PDB ID format. Returns lowercase value."""
+    value_lower = value.lower()
+    if not re.match(r"^[a-z0-9]{4}([._-]?\d+[._-]?[A-Za-z])?$", value_lower):
+        raise ValueError(
+            f"invalid template '{value}' - must be 4-character PDB ID with "
+            + "optional chain/assembly (e.g., '1ake', '1ake.1.A', '1ake1A')"
+        )
+    return value_lower
+
+
+def _validate_sequence_range(value):
+    """Validate sequence range format."""
+    if not re.match(r"^\d+-\d+$", value):
+        raise ValueError(
+            f"invalid sequence_range '{value}' - must be in format 'start-end' "
+            + "(e.g., '1-100')"
+        )
+    return value
+
+
+def _validate_checksum(value):
+    """Validate CRC64 checksum format. Returns uppercase value."""
+    value_upper = value.upper()
+    if not re.match(r"^[A-F0-9]{16}$", value_upper):
+        raise ValueError(
+            f"invalid uniprot_checksum '{value}' - must be 16-character CRC64 "
+            + "hex value (e.g., '1A2B3C4D5E6F7890')"
+        )
+    return value_upper
+
 
 def _parse_args():
     """Get command line arguments."""
@@ -45,32 +111,20 @@ def _parse_args():
         metavar=metas["outdir"],
         type=Path,
     )
-    providers = [
-        "alphafill",
-        "alphafold",
-        "hegelab",
-        "isoformio",
-        "levylab",
-        "modelarchive",
-        "pdbe",
-        "ped",
-        "sasbdb",
-        "swissmodel",
-    ]
     single_parser.add_argument(
         "--provider",
-        choices=providers,
+        choices=PROVIDERS,
         help="Request from provider only: '"
-        + "', '".join(providers)
+        + "', '".join(PROVIDERS)
         + "'. If none is specified, query all providers",
         metavar="<PROVIDER>",
         type=str.lower,
     )
     single_parser.add_argument(
         "--exclude-provider",
-        choices=providers,
+        choices=PROVIDERS,
         help="Exclude provider: '"
-        + "', '".join(providers)
+        + "', '".join(PROVIDERS)
         + "'. If none is specified, query all providers",
         metavar="<PROVIDER>",
         type=str.lower,
@@ -127,30 +181,26 @@ def _parse_args():
                 )
         # validate template format (PDB ID with optional chain/assembly)
         if opts.template is not None:
-            # Matches: 1ake, 1ake.1.A, 1ake1A, 1ake_1_A, etc.
-            if not re.match(
-                r"^[a-z0-9]{4}([._-]?\d+[._-]?[A-Za-z])?$", opts.template
-            ):
-                single_parser.error(
-                    "--template must be a 4-character PDB ID with optional "
-                    + "chain/assembly (e.g., '1ake', '1ake.1.A', '1ake1A'), "
-                    + f"got '{opts.template}'"
-                )
-        # validate sequence range format (start-end)
+            try:
+                opts.template = _validate_template(opts.template)
+            except ValueError as e:
+                single_parser.error(str(e))
+        # validate sequence range format
         if opts.sequence_range is not None:
-            if not re.match(r"^\d+-\d+$", opts.sequence_range):
-                single_parser.error(
-                    "--sequence-range must be in format 'start-end' (e.g., "
-                    + f"'1-100'), got '{opts.sequence_range}'"
+            try:
+                opts.sequence_range = _validate_sequence_range(
+                    opts.sequence_range
                 )
-        # validate CRC64 checksum format (16 hex characters)
+            except ValueError as e:
+                single_parser.error(str(e))
+        # validate CRC64 checksum format
         if opts.uniprot_checksum is not None:
-            if not re.match(r"^[A-F0-9]{16}$", opts.uniprot_checksum):
-                single_parser.error(
-                    "--uniprot-checksum must be a 16-character CRC64 hex value "
-                    + "(e.g., '1A2B3C4D5E6F7890'), got "
-                    + f"'{opts.uniprot_checksum}'"
+            try:
+                opts.uniprot_checksum = _validate_checksum(
+                    opts.uniprot_checksum
                 )
+            except ValueError as e:
+                single_parser.error(str(e))
     # Validate batch mode
     elif opts.mode == "batch":
         if not opts.tsv_file.is_file():
@@ -162,6 +212,8 @@ def _parse_args():
 def _parse_query_file(filepath):
     """Parse TSV query file with flexible column order (streaming).
 
+    Validates parameter values and warns on unknown columns.
+
     Args:
         filepath: Path to TSV query file
 
@@ -169,9 +221,10 @@ def _parse_query_file(filepath):
         Tuples of (endpoint, qualifier, params_dict)
 
     Raises:
-        ValueError: If file format is invalid
+        ValueError: If file format is invalid or parameter validation fails
     """
 
+    # pylint: disable=too-many-branches
     def _filtered_line(file_handle):
         """Generator that yields non-comment, non-empty lines."""
         for line in file_handle:
@@ -207,13 +260,48 @@ def _parse_query_file(filepath):
                 if not qualifier:
                     raise ValueError(f"Row {row_num}: empty qualifier value")
 
-                params = {
-                    key: value.strip()
-                    for key, value in row.items()
-                    if key not in ("endpoint", "qualifier")
-                    and value
-                    and value.strip()
-                }
+                # Build params dict with validation
+                params = {}
+                for key, value in row.items():
+                    if key in ("endpoint", "qualifier"):
+                        continue
+                    if not value or not value.strip():
+                        continue
+
+                    # Warn on unknown columns
+                    if key not in KNOWN_PARAMS:
+                        print(
+                            f"Warning: Row {row_num}: unknown column '{key}' "
+                            + f"(value: '{value}') - ignored",
+                            file=sys.stderr,
+                        )
+                        continue
+
+                    # Validate known parameters
+                    try:
+                        if key == "provider":
+                            params[key] = _validate_provider(value)
+                        elif key == "exclude_provider":
+                            params[key] = _validate_provider(value)
+                        elif key == "template":
+                            params[key] = _validate_template(value)
+                        elif key == "sequence_range":
+                            params[key] = _validate_sequence_range(value)
+                        elif key == "uniprot_checksum":
+                            params[key] = _validate_checksum(value)
+                    except ValueError as e:
+                        raise ValueError(f"Row {row_num}: {e}") from e
+
+                # Check provider != exclude_provider
+                if (
+                    "provider" in params
+                    and "exclude_provider" in params
+                    and params["provider"] == params["exclude_provider"]
+                ):
+                    raise ValueError(
+                        f"Row {row_num}: provider and exclude_provider cannot "
+                        + f"have the same value ('{params['provider']}')"
+                    )
 
                 yield (endpoint, qualifier, params)
 
