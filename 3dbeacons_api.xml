@@ -147,21 +147,19 @@ mkdir -p 'output_dir/'
         <!-- Batch mode -->
         <!-- Models -->
         <collection name="batch_mdl_collection" type="list:list:list" label="Models by qualifier">
-          <discover_datasets directory="output_dir" format="cif"
-                             pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__MMCIF__(?P&lt;identifier_2&gt;.*).cif" match_relative_path="true" recurse="true"/>
-          <discover_datasets directory="output_dir" format="pdb"
-                          pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__PDB__(?P&lt;identifier_2&gt;.*).pdb" match_relative_path="true" recurse="true"/>
+          <discover_datasets directory="output_dir" format="cif" pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__MMCIF__(?P&lt;identifier_2&gt;.*).cif" match_relative_path="true" recurse="true"/>
+          <discover_datasets directory="output_dir" format="pdb" pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__PDB__(?P&lt;identifier_2&gt;.*).pdb" match_relative_path="true" recurse="true"/>
           <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
         <!-- Model summaries -->
         <collection name="batch_summary_collection" type="list:list:list" label="Summaries by qualifier">
-        <discover_datasets directory="output_dir" format="json"
-                             pattern="(?P&lt;identifier_0&gt;.*)/SUMMARIES/(?P&lt;identifier_1&gt;.*)__(?P&lt;identifier_2&gt;.*)\.json" match_relative_path="true" recurse="true"/>
+        <discover_datasets directory="output_dir" format="json" pattern="(?P&lt;identifier_0&gt;.*)/SUMMARIES/(?P&lt;identifier_1&gt;.*)__(?P&lt;identifier_2&gt;.*)\.json" match_relative_path="true" recurse="true"/>
+        <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
         <!-- Entry information -->
         <collection name="batch_info_collection" type="list:list" label="Entry info by qualifier">
-        <discover_datasets directory="output_dir" format="json"
-                             pattern="(?P&lt;identifier_0&gt;.*)/INFO/(?P&lt;identifier_1&gt;.+)\.json" match_relative_path="true" recurse="true"/>
+          <discover_datasets directory="output_dir" format="json" pattern="(?P&lt;identifier_0&gt;.*)/INFO/(?P&lt;identifier_1&gt;.+)\.json" match_relative_path="true" recurse="true"/>
+          <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
     </outputs>
 <!--     <tests> -->
