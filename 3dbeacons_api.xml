@@ -31,7 +31,6 @@ mkdir -p 'output_dir/'
 && python3 '$__tool_directory__/api_wrapper_3dbeacons.py'
                           #if $mode == 'single'
                             single
-                            '$endpoint'
                             '$qualifier'
                             output_dir
                             #if $provider
@@ -57,10 +56,6 @@ mkdir -p 'output_dir/'
 ]]>
     </command>
     <inputs>
-        <param name="endpoint" type="select" value="UniProt" optional="false" label="Query DB" display="radio" help="The database to look up entries">
-            <option value="UniProt" selected="true">UniProtKB</option>
-            <option value="Ensembl">Ensembl</option>
-        </param>
         <conditional name="input_mode">
             <param name="mode" type="select" value="text" optional="false" label="Search Request" display="radio">
                 <option value="single" selected="true" >Single query</option>
@@ -85,7 +80,7 @@ mkdir -p 'output_dir/'
                 </param>
             </when>
             <when value="batch">
-              <param name="tsv_file" type="data" format="tabular" label="TSV query file" help="Tab-separated file with columns: endpoint, qualifier, and optional parameters"/>
+              <param name="tsv_file" type="data" format="tabular" label="TSV query file" help="Tab-separated file with columns: 'qualifier' column and optional parameter columns"/>
             </when>
         </conditional>
     </inputs>
@@ -140,7 +135,7 @@ mkdir -p 'output_dir/'
           <filter>input_mode['mode'] == 'single'</filter>
         </collection>
         <!-- Entry information -->
-        <collection name="info_collection" type="list" label="${endpoint} entry info for ${qualifier}">
+        <collection name="info_collection" type="list" label="Entry info for ${qualifier}">
           <discover_datasets directory="output_dir/INFO" format="json" pattern="(?P&lt;name&gt;.+)\.json$"/>
           <filter>input_mode['mode'] == 'single'</filter>
         </collection>

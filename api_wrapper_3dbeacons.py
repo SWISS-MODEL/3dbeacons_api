@@ -88,18 +88,7 @@ def _parse_args():
     metas = {
         "outdir": "<OUTPUT DIRECTORY>",
         "qualifier": "<QUALIFIER>",
-        "endpoint": "<ENDPOINT>",
     }
-    endpoints = ("UniProt", "Ensembl")
-    single_parser.add_argument(
-        "endpoint",
-        choices=[x.lower() for x in endpoints],
-        help="The database to look up entries, available: '"
-        + "', '".join(endpoints)
-        + "'",
-        metavar="<ENDPOINT>",
-        type=str.lower,
-    )
     single_parser.add_argument(
         "qualifier",
         help="ID/AC to search for",
@@ -155,9 +144,9 @@ def _parse_args():
     )
     batch_parser.add_argument(
         "tsv_file",
-        help="Path to TSV query file with columns: endpoint, qualifier, "
-        + "and optional parameters (provider, exclude_provider, template, "
-        + "sequence_range, uniprot_checksum)",
+        help="Path to TSV query file with columns: qualifier and optional "
+        + "parameters (provider, exclude_provider, template, sequence_range, "
+        + "uniprot_checksum)",
         metavar="<TSV_FILE>",
         type=Path,
     )
@@ -218,7 +207,7 @@ def _parse_query_file(filepath):
         filepath: Path to TSV query file
 
     Yields:
-        Tuples of (endpoint, qualifier, params_dict)
+        Tuples of (qualifier, params_dict)
 
     Raises:
         ValueError: If file format is invalid or parameter validation fails
@@ -237,25 +226,16 @@ def _parse_query_file(filepath):
             reader = csv.DictReader(_filtered_line(fh), delimiter="\t")
 
             # Validate header before processing rows
-            required = {"endpoint", "qualifier"}
+            required = {"qualifier"}
             missing = required - set(reader.fieldnames)
             if missing:
                 raise ValueError(
-                    f"Query file must have {required} columns in header. "
+                    f"Query file must have {required} column in header. "
                     f"Found: {', '.join(reader.fieldnames)}"
                 )
 
             # Process data rows
             for row_num, row in enumerate(reader, start=1):
-                endpoint = row.get("endpoint", "").strip().lower()
-                if not endpoint:
-                    raise ValueError(f"Row {row_num}: empty endpoint value")
-                if endpoint not in ("uniprot", "ensembl"):
-                    raise ValueError(
-                        f"Row {row_num}: invalid endpoint '{endpoint}'. "
-                        + "Must be 'uniprot' or 'ensembl'"
-                    )
-
                 qualifier = row.get("qualifier", "").strip()
                 if not qualifier:
                     raise ValueError(f"Row {row_num}: empty qualifier value")
@@ -263,7 +243,7 @@ def _parse_query_file(filepath):
                 # Build params dict with validation
                 params = {}
                 for key, value in row.items():
-                    if key in ("endpoint", "qualifier"):
+                    if key == "qualifier":
                         continue
                     if not value or not value.strip():
                         continue
@@ -303,7 +283,7 @@ def _parse_query_file(filepath):
                         + f"have the same value ('{params['provider']}')"
                     )
 
-                yield (endpoint, qualifier, params)
+                yield (qualifier, params)
 
     except FileNotFoundError as err:
         raise ValueError(f"Query file not found: '{filepath}'") from err
@@ -313,7 +293,6 @@ def _parse_query_file(filepath):
 
 def _assemble_call(
     qualifier,
-    endpoint,
     provider,
     exclude_provider,
     template,
@@ -323,7 +302,7 @@ def _assemble_call(
     """Get the URL for the request assembled."""
     # pylint: disable=too-many-positional-arguments,too-many-arguments
     url = (
-        f"https://www.ebi.ac.uk/pdbe/pdbe-kb/3dbeacons/api/v2/{endpoint}"
+        "https://www.ebi.ac.uk/pdbe/pdbe-kb/3dbeacons/api/v2/uniprot"
         + f"/summary/{qualifier}.json"
     )
     params = {}
@@ -391,13 +370,13 @@ def _fetch_file(mdl_info, outdir):
     return Path(mid).stem
 
 
-def _collect_results(response, endpoint, output_dir):
+def _collect_results(response, output_dir):
     """Get JSON data and coordinate files."""
     # write entry info as JSON
     out_path = output_dir / "INFO"
     out_path.mkdir(parents=True, exist_ok=True)
     with open(
-        out_path / f"{endpoint}_{response['uniprot_entry']['ac']}.json",
+        out_path / f"uniprot_{response['uniprot_entry']['ac']}.json",
         "w",
         encoding="utf8",
     ) as jfh:
@@ -422,7 +401,6 @@ def _collect_results(response, endpoint, output_dir):
 
 def _run_query(
     qualifier,
-    endpoint,
     out_dir,
     provider,
     exclude_provider,
@@ -434,7 +412,6 @@ def _run_query(
     # pylint: disable=too-many-positional-arguments,too-many-arguments
     call, api_params = _assemble_call(
         qualifier,
-        endpoint,
         provider,
         exclude_provider,
         template,
@@ -446,7 +423,7 @@ def _run_query(
     except requests.exceptions.HTTPError:  # Entry not found
         pass
     else:
-        _collect_results(response, endpoint, out_dir)
+        _collect_results(response, out_dir)
 
 
 def _main():
@@ -457,12 +434,11 @@ def _main():
         # Batch mode: process TSV file (streaming, memory efficient)
         # Process each query
         queries_processed = False
-        for endpoint, qualifier, params in _parse_query_file(opts.tsv_file):
+        for qualifier, params in _parse_query_file(opts.tsv_file):
             queries_processed = True
             qual_outdir = opts.outdir / qualifier
             _run_query(
                 qualifier,
-                endpoint,
                 qual_outdir,
                 params.get("provider"),
                 params.get("exclude_provider"),
@@ -478,7 +454,6 @@ def _main():
         # Single query mode
         _run_query(
             opts.qualifier,
-            opts.endpoint,
             opts.outdir,
             opts.provider,
             opts.exclude_provider,
