@@ -85,19 +85,15 @@ def _parse_args():
 
     # Single query mode
     single_parser = subparsers.add_parser("single", help="Query a single entry")
-    metas = {
-        "outdir": "<OUTPUT DIRECTORY>",
-        "qualifier": "<QUALIFIER>",
-    }
     single_parser.add_argument(
         "qualifier",
         help="ID/AC to search for",
-        metavar=metas["qualifier"],
+        metavar="<QUALIFIER>",
     )
     single_parser.add_argument(
         "outdir",
         help="Directory to store results in",
-        metavar=metas["outdir"],
+        metavar="<OUTPUT DIRECTORY>",
         type=Path,
     )
     single_parser.add_argument(
@@ -156,11 +152,15 @@ def _parse_args():
         metavar="<OUTPUT_DIRECTORY>",
         type=Path,
     )
-
     opts = parser.parse_args()
 
     # Validate single-query mode
     if opts.mode == "single":
+        # check qualifier
+        if len(opts.qualifier) == 0:
+            single_parser.error(
+                "Argument of '<QUALIFIER>' can not be an empty string"
+            )
         # check provider & exclude-provider to be different (404es)
         if opts.provider is not None and opts.exclude_provider is not None:
             if opts.provider == opts.exclude_provider:

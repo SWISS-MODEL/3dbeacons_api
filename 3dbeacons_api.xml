@@ -63,10 +63,10 @@ mkdir -p 'output_dir/'
             </param>
             <when value="single">
                 <param name="qualifier" type="text" value="" optional="false" label="Qualifier" help="ID/ AC to search for"/>
-                <param name="provider" type="select" optional="true" label="Provider" display="dropdown" help="Request from provider only. If none is selected, query all providers.">
+                <param name="provider" type="select" optional="true" label="Provider" help="Request from provider only. If none is selected, query all providers.">
                     <expand macro="provider_options"/>
                 </param>
-                <param name="exclude_provider" type="select" optional="true" label="Exclude provider" display="dropdown" help="Exclude provider from querying.">
+                <param name="exclude_provider" type="select" optional="true" label="Exclude provider" help="Exclude provider from querying.">
                     <expand macro="provider_options"/>
                 </param>
                 <param name="template" type="text" value="" optional="true" label="Template" help="Template PDB ID (4-character code, e.g., '1ake', or with chain/assembly like '1ake.1.A').">
@@ -157,119 +157,94 @@ mkdir -p 'output_dir/'
           <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
     </outputs>
-<!--     <tests> -->
-<!--         <!-\- w/o params, all will be empty strings, fail -\-> -->
-<!--         <test expect_exit_code="2" expect_failure="true"> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="Argument of '&lt;SEQUENCE[S]&gt;' can not be an empty"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- with sequences, everything else empty, fail -\-> -->
-<!--         <test expect_exit_code="1" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <repeat name="target_list"> -->
-<!--                     <param name="sequence" value="test.fas"/> -->
-<!--                 </repeat> -->
-<!--                 <repeat name="target_list"> -->
-<!--                     <param name="sequence" value="AKGLHGFHVHEFGDNTNGCMSSGPHFNPYGKE"/> -->
-<!--                 </repeat> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="SWISS-MODEL token is not provided in credentials!"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- alignment mode tests, as few params as possible, fail -\-> -->
-<!--         <test expect_exit_code="2" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="project_type" value="alignment"/> -->
-<!--                 <param name="assembly_id" value="0"/> -->
-<!--                 <param name="template_seqres_offset" value="0"/> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="Option '-\-auth-asym-id' can not be an empty string"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- alignment mode tests, with auth_asym_id, fail -\-> -->
-<!--         <test expect_exit_code="2" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="assembly_id" value="0"/> -->
-<!--                 <param name="auth_asym_id" value="A"/> -->
-<!--                 <param name="project_type" value="alignment"/> -->
-<!--                 <param name="template_seqres_offset" value="0"/> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="Option '-\-pdb-id' can not be an empty string"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- alignment mode tests, with pdb_id, fail -\-> -->
-<!--         <test expect_exit_code="2" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="assembly_id" value="0"/> -->
-<!--                 <param name="auth_asym_id" value="A"/> -->
-<!--                 <param name="pdb_id" value="1AKE"/> -->
-<!--                 <param name="project_type" value="alignment"/> -->
-<!--                 <param name="template_seqres_offset" value="0"/> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="Option '-\-template-sequence' can not be an empty string"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- alignment mode tests, with template_sequence, fail -\-> -->
-<!--         <test expect_exit_code="2" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="assembly_id" value="0"/> -->
-<!--                 <param name="auth_asym_id" value="A"/> -->
-<!--                 <param name="pdb_id" value="1AKE"/> -->
-<!--                 <param name="project_type" value="alignment"/> -->
-<!--                 <param name="template_seqres_offset" value="0"/> -->
-<!--                 <param name="template_sequence" value="test.fas"/> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="Argument of '&lt;SEQUENCE[S]&gt;' can not be an empty"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- alignment mode tests, with sequence, fail -\-> -->
-<!--         <test expect_exit_code="1" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="assembly_id" value="0"/> -->
-<!--                 <param name="auth_asym_id" value="A"/> -->
-<!--                 <param name="pdb_id" value="1AKE"/> -->
-<!--                 <param name="project_type" value="alignment"/> -->
-<!--                 <param name="target_sequence" value="test.fas"/> -->
-<!--                 <param name="template_seqres_offset" value="0"/> -->
-<!--                 <param name="template_sequence" value="test.fas"/> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="SWISS-MODEL token is not provided in credentials!"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- usertemplate mode tests, as few params as possible, fail -\-> -->
-<!--         <test expect_exit_code="2" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="project_type" value="usertemplate"/> -->
-<!--                 <param name="template_file" value="model_01.pdb"/> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="Argument of '&lt;SEQUENCE[S]&gt;' can not be an empty"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--         <!-\- usertemplate mode tests, with sequence, fail -\-> -->
-<!--         <test expect_exit_code="1" expect_failure="true"> -->
-<!--             <conditional name="project"> -->
-<!--                 <param name="project_type" value="usertemplate"/> -->
-<!--                 <param name="template_file" value="model_01.pdb"/> -->
-<!--                 <repeat name="target_list"> -->
-<!--                     <param name="sequence" value="test.fas"/> -->
-<!--                 </repeat> -->
-<!--                 <repeat name="target_list"> -->
-<!--                     <param name="sequence" value="AKGLHGFHVHEFGDNTNGCMSSGPHFNPYGKE"/> -->
-<!--                 </repeat> -->
-<!--             </conditional> -->
-<!--             <assert_stderr> -->
-<!--                 <has_line line="SWISS-MODEL token is not provided in credentials!"/> -->
-<!--             </assert_stderr> -->
-<!--         </test> -->
-<!--     </tests> -->
+    <tests>
+        <!-- Single mode validation tests -->
+        <!-- Test 1: Empty qualifier -->
+        <test expect_exit_code="2" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="single"/>
+                <param name="qualifier" value=""/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="Argument of '&lt;QUALIFIER&gt;' can not be an empty string"/>
+            </assert_stderr>
+        </test>
+        <!-- Test 2: Provider == exclude_provider -->
+        <test expect_exit_code="2" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="single"/>
+                <param name="qualifier" value="P12345"/>
+                <param name="provider" value="pdbe"/>
+                <param name="exclude_provider" value="pdbe"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="--provider and --exclude-provider must have different values"/>
+            </assert_stderr>
+        </test>
+        <!-- Batch mode validation tests -->
+        <!-- Test X: Missing TSV file; can't be tested, Planemo notices the -->
+        <!-- file is missing before running the test -->
+        <!-- Test 3: Invalid TSV header -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="batch"/>
+                <param name="tsv_file" value="invalid_header.tsv"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="Query file must have {'qualifier'} column in header. Found: provider, template"/>
+            </assert_stderr>
+        </test>
+        <!-- Test 4: Invalid provider in TSV -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="batch"/>
+                <param name="tsv_file" value="invalid_provider.tsv"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="Row 1: invalid provider 'invalid_provider_name' - must be one of:"/>
+            </assert_stderr>
+        </test>
+        <!-- Test 5: Conflicting providers in TSV -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="batch"/>
+                <param name="tsv_file" value="conflicting_providers.tsv"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="provider and exclude_provider cannot have the same value"/>
+            </assert_stderr>
+        </test>
+        <!-- Test 6: Invalid template in TSV -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="batch"/>
+                <param name="tsv_file" value="invalid_template.tsv"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="invalid template 'bad_template' -"/>
+            </assert_stderr>
+        </test>
+        <!-- Test 7: Invalid sequence range in TSV -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="batch"/>
+                <param name="tsv_file" value="invalid_range.tsv"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="invalid sequence_range 'not-a-range' -"/>
+            </assert_stderr>
+        </test>
+        <!-- Test 8: Invalid checksum in TSV -->
+        <test expect_exit_code="1" expect_failure="true">
+            <conditional name="input_mode">
+                <param name="mode" value="batch"/>
+                <param name="tsv_file" value="invalid_checksum.tsv"/>
+            </conditional>
+            <assert_stderr>
+                <has_text text="invalid uniprot_checksum 'tooshort' -"/>
+            </assert_stderr>
+        </test>
+    </tests>
 <!--     <help><![CDATA[ -->
 <!-- The SWISS-MODEL Modelling API tool gives you convenient access to homology models build by `SWISS-MODEL <https://swissmodel.expasy.org>`_ via our `API <https://swissmodel.expasy.org/docs/help#modelling_api>`_. -->
 
