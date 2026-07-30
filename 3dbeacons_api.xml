@@ -245,86 +245,110 @@ mkdir -p 'output_dir/'
             </assert_stderr>
         </test>
     </tests>
-<!--     <help><![CDATA[ -->
-<!-- The SWISS-MODEL Modelling API tool gives you convenient access to homology models build by `SWISS-MODEL <https://swissmodel.expasy.org>`_ via our `API <https://swissmodel.expasy.org/docs/help#modelling_api>`_. -->
+    <help><![CDATA[
+The 3D-Beacons API tool provides unified access to experimentally determined and
+predicted protein structure models from multiple providers via the
+`3D-Beacons Network API <https://www.ebi.ac.uk/pdbe/pdbe-kb/3dbeacons/>`_.
 
-<!-- By default, the tool fetches model coordinates in ModelCIF format from the SWISS-MODEL API. SWISS-MODEL enriches its ModelCIF files with lots of extra information, essential for later reproduction of the computational experiment and enabling for easy deposition at archiving sites, like `Model Archive <https://modelarchive.org>`_. Output format can be toggled in the *Output format options* section for legacy PDB format, in case you are dealing with old-school tools in your workflows. Regardless of the format, output file names follow the pattern ``model_<N>.[cif|pdb]``. -->
+Single Query Mode
+-----------------
 
-<!-- The SWISS-MODEL API provides three major modelling modes: Automodel, alignment and template upload mode. -->
+Use single query mode to fetch all available structure models for one protein
+(UniProt entry). This mode is ideal for exploring structural data for individual
+proteins.
 
-<!-- Automodel mode -->
-<!-- -\-\-\-\-\-\-\-\-\-\-\-\-\- -->
+**Parameters:**
 
-<!-- This mode corresponds to the "Sequence(s)" input mode and just hitting the "Build Model" button on our `web page <https://swissmodel.expasy.org/interactive>`_. -->
+- **Qualifier**: UniProt accession or identifier (e.g., ``P12345``)
+- **Provider**: Optional filter to request models from one provider only
+- **Exclude Provider**: Optional filter to exclude one provider from results
+- **Template**: Optional filter by template PDB ID (4-character code, e.g.,
+  ``1ake`` or with chain/assembly like ``1ake.1.A``)
+- **Sequence Range**: Optional filter by UniProt sequence range (format:
+  ``start-end``, e.g., ``1-100``)
+- **UniProt Checksum**: Optional filter by CRC64 checksum (16-character hex
+  value)
 
-<!-- Automodel goes from sequence(s) to structural model. A single sequence for input leads to monomers or homomers. Multiple sequences for input produces heteromers, incorporating all target sequences. Multiple sequences input is sometimes mistaken for multi-model modelling tasks but its not, to produce models for more than one target sequence, you need to run the tool for each sequence separately. -->
+Batch Query Mode
+----------------
 
-<!-- Inside an automodel job, the following happens: -->
+Use batch mode to process multiple proteins in one tool run. This mode is
+**required for Galaxy workflows** processing multiple inputs.
 
-<!-- 1. Template search in `PDB <https://www.rcsb.org>`_ and AlphaFold DB v4 sequences -->
-<!-- 2. Template selection by estimated quality and target sequence coverage -->
+**Activating Batch Mode in Workflows:**
 
-<!--    - gain high model confidence -->
-<!--    - cover as much of the target sequence, maybe by different models per region -->
-<!--    - employ models for equal regions if structurally diverse -->
+When using this tool in a workflow, click on the tool node to open its settings,
+then change the "Search Request" parameter from "Single query" to "Batch query".
+This switches the tool to batch mode and reveals the TSV file input. You can
+then connect a TSV dataset or dataset collection from a previous workflow step.
 
-<!-- 3. Build models -->
+**TSV File Format:**
 
-<!-- Automodel options -->
-<!-- ~~~~~~~~~~~~~~~~~ -->
+The input file must be tab-separated with a header row. The ``qualifier`` column
+is required. Optional parameter columns are: ``provider``,
+``exclude_provider``, ``template``, ``sequence_range``, ``uniprot_checksum``.
+Lines starting with ``#`` are treated as comments and ignored.
 
-<!-- Only one or more sequences required, that's all! Single sequence produces monomers and/ or homomers. Multiple sequences produces heteromers. -->
+**Example TSV file:**
 
+::
 
-<!-- Alignment mode -->
-<!-- -\-\-\-\-\-\-\-\-\-\-\-\-\- -->
+    # Example 3D-Beacons batch query
+    qualifier	provider	template	sequence_range
+    P04637	alphafold		
+    P00533	pdbe	1m17	
+    P00921			50-150
+    Q9H222				
 
-<!-- This mode corresponds to the "Target-Template Alignment" input mode on our `web page <https://swissmodel.expasy.org/interactive#alignment>`_. -->
+This example queries:
+    
+- All providers for P04637 (p53) from AlphaFold DB
+- PDBe models for P00533 (EGFR) with template 1m17
+- All providers for P12345 restricted to sequence range 50-150
+- All providers for Q9H222
 
-<!-- The alignment mode still builds a model for a target sequence and a template from the `SWISS-MODEL template library <https://swissmodel.expasy.org/templates/>`_ (**SMTL**). But instead of creating the alignment from its own template search run, SWISS-MODEL will use an alignment provided by yourself. The alignment will be mapped onto the template sequence and then a structural model will be build. -->
+Available Providers
+-------------------
 
-<!-- To properly map a your alignment within the SMTL, you need to provide some extra information. SWISS-MODEL needs the identifier of the template. That's a common PDB ID, it just needs to exist in the SMTL. Then you need to identify the biological assembly of the entry you want your model to be based on... which can be easily done from the SMTL page. The assembly ID comes with the SMTL ID, its the number after the PDB ID and alternative assemblies of an entry can be found at the bottom of an entry page. The last component is the chain name you used for the alignment. Be aware, the SMTL uses its own chain names, so the original PDB chain name may not work. A mapping of chain names is provided on SMTL entry pages. -->
+The following providers are available through 3D-Beacons:
 
-<!-- Alignment mode options -->
-<!-- ~~~~~~~~~~~~~~~~~~~~~~ -->
+- SWISS-MODEL
+- ModelArchive
+- AlphaFill
+- AlphaFold DB
+- HegeLab
+- PDBe
+- Protein Ensemble Database (PED)
+- SASBDB
 
-<!-- - Target sequence: first part of the alignment -->
-<!-- - Template sequence: second sequence of the alignment -->
-<!-- - Template sequence offset: position the template sequence starts at with respect to the full sequence; When using only a sub-sequence of the full sequence, it may be hard to automatically map to the right region in case of repeats, so you need to provide the offset -->
-<!-- - PDB/ SMTL ID: PDB ID of the SMTL entry the alignment refers to -->
-<!-- - Assembly ID: ID of the biological assembly to be used as template -->
-<!-- - Chain name: ID of the chain to be used for modelling, needs to be the SMTL name, not the PDB name -->
+Output Format
+-------------
 
+Output file formats (PDB or
+`mmCIF <https://mmcif.wwpdb.org>`_/ `ModelCIF <https://mmcif.wwpdb.org/dictionaries/mmcif_ma.dic/Index/>`_)
+are determined by the individual providers, not by the 3D-Beacons API. The tool
+downloads models in the native format provided by each structure provider.
 
-<!-- User template mode -->
-<!-- -\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- -->
+**Output Structure:**
 
-<!-- This mode corresponds to the "User Template" input mode on our `web page <https://swissmodel.expasy.org/interactive#structure>`_. -->
+Single mode outputs are organized into collections:
 
-<!-- The user template mode builds a model for a target sequence and template coordinates provided by you instead of using a SMTL entry for coordinates. The sequence alignment between target and template sequence is still calculated by SWISS-MODEL using HHblits and BLAST, or local alignment algorithm if both methods fail. With the alignment, a structural model is build based on the provided template coordinates. -->
+- **Models by provider**: mmCIF/ ModelCIF or PDB coordinate files grouped by
+  provider
+- **Model summaries**: JSON files with per-model metadata (one per model)
+- **Entry information**: JSON file with UniProt entry metadata
 
-<!-- Inside a user template job, the following happens: -->
+Batch mode outputs are organized as nested collections by qualifier, with the
+same internal structure (models, summaries, entry info) for each query.
 
-<!-- 1. Analyse uploaded coordinates -->
-<!-- 2. Calculate alignments with HHblits & BLAST -->
-<!-- 3. Choose "better" alignment or calculate Smith-Waterman alignment -->
-<!-- 4. Build model -->
+Attribution
+-----------
 
-<!-- User template mode options -->
-<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-<!-- - Target sequence: sequence to be modelled (post multiple for heteros) -->
-<!-- - Template coordinate file: your template file, must be PDB formatted -->
+When using data from 3D-Beacons, please cite the 3D-Beacons publication and
+acknowledge the individual data providers according to their terms of use.
 
-<!-- Attribution/ License -->
-<!-- ~~~~~~~~~~~~~~~~~~~~ -->
-
-<!-- Terms of use can be found at https://swissmodel.expasy.org/docs/terms_of_use -->
-
-<!-- Modelling results of SWISS-MODEL are licensed under the -->
-<!-- `CC BY-SA 4.0 Creative Commons Attribution-ShareAlike 4.0 International License <https://creativecommons.org/licenses/by-sa/4.0/legalcode>`_. -->
-
-<!-- ]]> -->
-<!--     </help> -->
+Terms of use: https://www.ebi.ac.uk/pdbe/pdbe-kb/3dbeacons/terms
+    ]]></help>
     <citations>
         <!-- 3D-Beacons -->
         <citation type="doi">10.1093/gigascience/giac118</citation>
