@@ -4,7 +4,7 @@
         experimentally determined and predicted structure models
     </description>
     <macros>
-        <token name="@TOOL_VERSION@">0.1.0</token>
+        <token name="@TOOL_VERSION@">1.0.0</token>
         <token name="@VERSION_SUFFIX@">0</token>
         <xml name="provider_options">
           <option value="swissmodel">SWISS-MODEL</option>
@@ -62,25 +62,37 @@ mkdir -p 'output_dir/'
                 <option value="batch">Batch query</option>
             </param>
             <when value="single">
-                <param name="qualifier" type="text" value="" optional="false" label="Qualifier" help="ID/ AC to search for"/>
-                <param name="provider" type="select" optional="true" label="Provider" help="Request from provider only. If none is selected, query all providers.">
+                <param name="qualifier" type="text" value="" optional="false"
+                       label="Qualifier" help="ID/ AC to search for"/>
+                <param name="provider" type="select" optional="true"
+                       label="Provider"
+                       help="Request from provider only. If none is selected, query all providers.">
                     <expand macro="provider_options"/>
                 </param>
-                <param name="exclude_provider" type="select" optional="true" label="Exclude provider" help="Exclude provider from querying.">
+                <param name="exclude_provider" type="select" optional="true"
+                       label="Exclude provider" help="Exclude provider from querying.">
                     <expand macro="provider_options"/>
                 </param>
-                <param name="template" type="text" value="" optional="true" label="Template" help="Template PDB ID (4-character code, e.g., '1ake', or with chain/assembly like '1ake.1.A').">
+                <param name="template" type="text" value="" optional="true"
+                       label="Template"
+                       help="Template PDB ID (4-character code, e.g., '1ake', or with chain/assembly like '1ake.1.A').">
                     <validator type="regex" message="Template must be a 4-character PDB ID (e.g., '1ake') optionally followed by assembly and chain (e.g., '1ake.1.A', '1ake1A').">^[a-zA-Z0-9]{4}([._-]?\d+[._-]?[A-Za-z])?$</validator>
                 </param>
-                <param name="sequence_range" type="text" value="" optional="true" label="Sequence range" help="Specify a UniProt sequence residue range (format: 'start-end', e.g., '1-100').">
-                    <validator type="regex" message="Sequence range must be in format 'start-end' (e.g., '1-100').">^\d+-\d+$</validator>
+                <param name="sequence_range" type="text" value="" optional="true"
+                       label="Sequence range"
+                       help="Specify a UniProt sequence residue range (format: 'start-end', e.g., '1-100').">
+                    <validator type="regex" message="Sequence range must be in format 'start-end' (e.g., '1-100')">^\d+-\d+$</validator>
                 </param>
-                <param name="uniprot_checksum" type="text" value="" optional="true" label="UniProt checksum" help="CRC64 checksum of the UniProt sequence (16-character hex value, e.g., '1A2B3C4D5E6F7890').">
-                    <validator type="regex" message="UniProt checksum must be a 16-character hexadecimal value (e.g., '1A2B3C4D5E6F7890').">^[A-F0-9]{16}$</validator>
+                <param name="uniprot_checksum" type="text" value="" optional="true"
+                       label="UniProt checksum"
+                       help="CRC64 checksum of the UniProt sequence (16-character hex value, e.g., '1A2B3C4D5E6F7890').">
+                    <validator type="regex" message="UniProt checksum must be a 16-character hexadecimal value (e.g., '1A2B3C4D5E6F7890')">^[A-F0-9]{16}$</validator>
                 </param>
             </when>
             <when value="batch">
-              <param name="tsv_file" type="data" format="tabular" label="TSV query file" help="Tab-separated file with columns: 'qualifier' column and optional parameter columns"/>
+                <param name="tsv_file" type="data" format="tabular"
+                       label="TSV query file"
+                       help="Tab-separated file with columns: 'qualifier' column and optional parameter columns"/>
             </when>
         </conditional>
     </inputs>
@@ -90,71 +102,99 @@ mkdir -p 'output_dir/'
         <!-- Isoform.io down since May 2026 -->
         <!-- HegeLab.org -->
         <collection name="cif_hl_collections" type="list" label="HegeLab mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="HEGELAB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'hegelab') and input_mode['exclude_provider'] != 'hegelab')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="HEGELAB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'hegelab')
+                and input_mode['exclude_provider'] != 'hegelab'
+            )</filter>
         </collection>
         <!-- AlphaFill Q69GM4 -->
         <collection name="cif_afi_collections" type="list" label="AlphaFill mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFill__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'alphafill') and input_mode['exclude_provider'] != 'alphafill')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFill__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'alphafill')
+                and input_mode['exclude_provider'] != 'alphafill'
+            )</filter>
         </collection>
         <!-- SASBDB -->
         <collection name="pdb_sasb_collections" type="list" label="SASBDB PDB model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="pdb" pattern="SASBDB__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'sasbdb') and input_mode['exclude_provider'] != 'sasbdb')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="pdb"
+                               pattern="SASBDB__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'sasbdb')
+                and input_mode['exclude_provider'] != 'sasbdb'
+            )</filter>
         </collection>
         <!-- Protein Ensemble Database -->
         <collection name="cif_ped_collections" type="list" label="PED mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PED__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'ped') and input_mode['exclude_provider'] != 'ped')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PED__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'ped')
+                and input_mode['exclude_provider'] != 'ped'
+            )</filter>
         </collection>
         <!-- PDBe -->
         <collection name="cif_pdbe_collections" type="list" label="PDBe mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PDBe__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'pdbe') and input_mode['exclude_provider'] != 'pdbe')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="PDBe__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'pdbe')
+                and input_mode['exclude_provider'] != 'pdbe'
+            )</filter>
         </collection>
         <!-- PDBe-KB: not seen in results, yet (provider ID unknown) -->
         <!-- AlphaFold DB -->
         <collection name="cif_af_collections" type="list" label="AlphaFold DB mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFold DB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'alphafold') and input_mode['exclude_provider'] != 'alphafold')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="AlphaFold DB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'alphafold')
+                and input_mode['exclude_provider'] != 'alphafold'
+            )</filter>
         </collection>
         <!-- ModelArchive -->
         <collection name="cif_ma_collections" type="list" label="ModelArchive mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="ModelArchive__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'modelarchive') and input_mode['exclude_provider'] != 'modelarchive')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="ModelArchive__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'modelarchive')
+                and input_mode['exclude_provider'] != 'modelarchive'
+            )</filter>
         </collection>
         <!-- SWISS-MODEL -->
         <collection name="cif_sm_collections" type="list" label="SWISS-MODEL mmCIF model(s) for ${qualifier}">
-          <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="SWISS-MODEL__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
-          <filter>input_mode['mode'] == 'single' and ((not input_mode['provider'] or input_mode['provider'] == 'swissmodel') and input_mode['exclude_provider'] != 'swissmodel')</filter>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="SWISS-MODEL__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'swissmodel')
+                and input_mode['exclude_provider'] != 'swissmodel'
+            )</filter>
         </collection>
         <!-- Model summaries -->
         <collection name="summary_collection" type="list:list" label="Summaries for ${qualifier}">
-          <discover_datasets directory="output_dir/SUMMARIES" format="json" pattern="(?P&lt;identifier_0&gt;.*)__(?P&lt;identifier_1&gt;.*)\.json$"/>
-          <filter>input_mode['mode'] == 'single'</filter>
+            <discover_datasets directory="output_dir/SUMMARIES" format="json" pattern="(?P&lt;identifier_0&gt;.*)__(?P&lt;identifier_1&gt;.*)\.json$"/>
+            <filter>input_mode['mode'] == 'single'</filter>
         </collection>
         <!-- Entry information -->
         <collection name="info_collection" type="list" label="Entry info for ${qualifier}">
-          <discover_datasets directory="output_dir/INFO" format="json" pattern="(?P&lt;name&gt;.+)\.json$"/>
-          <filter>input_mode['mode'] == 'single'</filter>
+            <discover_datasets directory="output_dir/INFO" format="json" pattern="(?P&lt;name&gt;.+)\.json$"/>
+            <filter>input_mode['mode'] == 'single'</filter>
         </collection>
         <!-- Batch mode -->
         <!-- Models -->
         <collection name="batch_mdl_collection" type="list:list:list" label="Models by qualifier">
-          <discover_datasets directory="output_dir" format="cif" pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__MMCIF__(?P&lt;identifier_2&gt;.*).cif" match_relative_path="true" recurse="true"/>
-          <discover_datasets directory="output_dir" format="pdb" pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__PDB__(?P&lt;identifier_2&gt;.*).pdb" match_relative_path="true" recurse="true"/>
-          <filter>input_mode['mode'] == 'batch'</filter>
+            <discover_datasets directory="output_dir" format="cif" pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__MMCIF__(?P&lt;identifier_2&gt;.*).cif"
+                match_relative_path="true" recurse="true"/>
+            <discover_datasets directory="output_dir" format="pdb" pattern="(?P&lt;identifier_0&gt;.*)/MODELS/(?P&lt;identifier_1&gt;.*)__PDB__(?P&lt;identifier_2&gt;.*).pdb"
+                match_relative_path="true" recurse="true"/>
+            <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
         <!-- Model summaries -->
         <collection name="batch_summary_collection" type="list:list:list" label="Summaries by qualifier">
-        <discover_datasets directory="output_dir" format="json" pattern="(?P&lt;identifier_0&gt;.*)/SUMMARIES/(?P&lt;identifier_1&gt;.*)__(?P&lt;identifier_2&gt;.*)\.json" match_relative_path="true" recurse="true"/>
-        <filter>input_mode['mode'] == 'batch'</filter>
+            <discover_datasets directory="output_dir" format="json" pattern="(?P&lt;identifier_0&gt;.*)/SUMMARIES/(?P&lt;identifier_1&gt;.*)__(?P&lt;identifier_2&gt;.*)\.json" match_relative_path="true" recurse="true"/>
+            <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
         <!-- Entry information -->
         <collection name="batch_info_collection" type="list:list" label="Entry info by qualifier">
-          <discover_datasets directory="output_dir" format="json" pattern="(?P&lt;identifier_0&gt;.*)/INFO/(?P&lt;identifier_1&gt;.+)\.json" match_relative_path="true" recurse="true"/>
-          <filter>input_mode['mode'] == 'batch'</filter>
+            <discover_datasets directory="output_dir" format="json" pattern="(?P&lt;identifier_0&gt;.*)/INFO/(?P&lt;identifier_1&gt;.+)\.json"
+                match_relative_path="true" recurse="true"/>
+            <filter>input_mode['mode'] == 'batch'</filter>
         </collection>
     </outputs>
     <tests>
