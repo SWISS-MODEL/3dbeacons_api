@@ -386,10 +386,10 @@ columns
             <output_collection name="cif_sm_collections" type="list">
                 <expand macro="assert_sm_P12345_cif"/>
             </output_collection>
-            <output_collection name="summary_collection" type="list:list">
+            <output_collection name="summary_collection" type="list:list" min="100">
                 <expand macro="assert_summary_sm_P12345_json"/>
             </output_collection>
-            <output_collection name="info_collection" type="list">
+            <output_collection name="info_collection" min="10" type="list">
                 <expand macro="assert_info_P12345_json"/>
             </output_collection>
         </test>
