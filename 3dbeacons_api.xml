@@ -154,7 +154,7 @@ CRC64 checksum of the UniProt sequence (16-character hex value, e.g.,
                 </param>
             </when>
             <when value="batch">
-                <param name="tsv_file" type="data" format="tabular"
+                <param name="tsv_file" type="data" format="tabular,tsv"
                        label="TSV query file">
                     <help><![CDATA[
 Tab-separated file with columns: 'qualifier' column and optional parameter 
