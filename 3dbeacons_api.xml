@@ -12,8 +12,8 @@
             <option value="alphafill">AlphaFill</option>
             <option value="alphafold">AlphaFold DB</option>
             <option value="hegelab">HegeLab</option>
-            <!-- <option value="isoformio">Isoform.io</option> -->
-            <!-- <option value="levylab">LevyLab</option> -->
+            <option value="isoformio">Isoform.io</option>
+            <option value="levylab">LevyLab</option>
             <option value="pdbe">PDBe</option>
             <option value="ped">Protein Ensemble Database</option>
             <option value="sasbdb">SASBDB</option>
@@ -166,8 +166,28 @@ columns
     </inputs>
     <outputs>
         <!-- Single query mode -->
-        <!-- LevyLab 404es -->
-        <!-- Isoform.io down since May 2026 -->
+        <!-- LevyLab -->
+        <collection name="pdb_levy_collections" type="list"
+                    label="LevyLab PDB model(s) for ${qualifier}">
+            <discover_datasets directory="output_dir/MODELS/" format="pdb" pattern="levylab__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'levylab')
+                and (not input_mode['exclude_provider']
+                or input_mode['provider'] == input_mode['exclude_provider']
+                or input_mode['exclude_provider'] != 'levylab')
+            )</filter>
+        </collection>
+        <!-- Isoform.io -->
+        <collection name="pdb_iso_collections" type="list"
+                    label="Isoform.io PDB model(s) for ${qualifier}">
+            <discover_datasets directory="output_dir/MODELS/" format="pdb" pattern="isoform\.io__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
+            <filter>input_mode['mode'] == 'single' and (
+                (not input_mode['provider'] or input_mode['provider'] == 'isoformio')
+                and (not input_mode['exclude_provider']
+                or input_mode['provider'] == input_mode['exclude_provider']
+                or input_mode['exclude_provider'] != 'isoformio')
+            )</filter>
+        </collection>
         <!-- HegeLab.org -->
         <collection name="cif_hl_collections" type="list"
                     label="HegeLab mmCIF model(s) for ${qualifier}">
@@ -578,6 +598,8 @@ The following providers are available through 3D-Beacons:
 - AlphaFill
 - AlphaFold DB
 - HegeLab
+- Isoform.io
+- LevyLab
 - PDBe
 - Protein Ensemble Database (PED)
 - SASBDB
