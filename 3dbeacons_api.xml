@@ -212,8 +212,9 @@ columns
         </collection>
         <!-- SASBDB -->
         <collection name="pdb_sasb_collections" type="list"
-                    label="SASBDB PDB model(s) for ${qualifier}">
+                    label="SASBDB model(s) for ${qualifier}">
             <discover_datasets directory="output_dir/MODELS/" format="pdb" pattern="SASBDB__PDB__(?P&lt;name&gt;.*)\.pdb$"/>
+            <discover_datasets directory="output_dir/MODELS/" format="cif" pattern="SASBDB__MMCIF__(?P&lt;name&gt;.*)\.cif$"/>
             <filter>input_mode['mode'] == 'single' and (
                 (not input_mode['provider'] or input_mode['provider'] == 'sasbdb')
                 and (not input_mode['exclude_provider']

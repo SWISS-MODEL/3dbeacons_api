@@ -435,8 +435,10 @@ def _make_coordfile_name(mdl_info):
         f"{mdl_info['provider']}__{mdl_info['model_format'].upper()}"
         + f"__{mdl_id}"
     )
-    # make sure file has an extension
-    if not fname.suffix:
+    # make sure file has a lowercase extension, Galaxy discovers files by it
+    if fname.suffix:
+        fname = fname.with_suffix(fname.suffix.lower())
+    else:
         if mdl_info["model_format"].upper() == "MMCIF":
             fname = fname.with_suffix(".cif")
         else:
