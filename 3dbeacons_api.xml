@@ -512,9 +512,9 @@ Lines starting with ``#`` are treated as comments and ignored.
 
 This example queries:
     
-- All providers for P04637 (p53) from AlphaFold DB
+- All models for P04637 (p53) from AlphaFold DB
 - PDBe models for P00533 (EGFR) with template 1m17
-- All providers for P12345 restricted to sequence range 50-150
+- All providers for P00921 restricted to sequence range 50-150
 - All providers for Q9H222
 
 Available Providers
