@@ -427,7 +427,7 @@ _TRANSLATE_TABLE = str.maketrans(".:", "__")
 def _make_coordfile_name(mdl_info):
     """Assemble a name for a coordinate file."""
     # some providers deliver non-unique file name, use model identifier instead
-    if mdl_info["provider"].upper() in ("SWISS-MODEL",):
+    if mdl_info["provider"].upper() in ("SWISS-MODEL", "PED"):
         mdl_id = mdl_info["model_identifier"].translate(_TRANSLATE_TABLE)
     else:
         mdl_id = str(Path(urlsplit(mdl_info["model_url"]).path).name)
